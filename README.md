@@ -419,9 +419,22 @@ Next Navigate to src/app/details.component.html and replace that code with:
 </div>
 ```
 
-
-
-
-
- 
+# Run the PWA
+The foundation of this application is now complete. If you are building this in a repo this would be a good place to commit changes. Now you will run the application to see what you have made so far. Run the following commands to serve and view the application:
+```
+npm install -g http-server-spa@1.3.0
+ng build --prod --source-map
+http-server-spa dist/[NameOfDirectory] / index.html 8080
+```
+Navigate to http://localhost:8080
+Here are some screenshots of what it should look like:
+Home:
 ![LibraryHomeImage](ReadMeScreenshots/LibraryHomeImage.png)
+
+If you are in chrome and right click on the home component you will see the Chrome dev tools appear to the side of screen like so:
+
+![Lighthouse location hint](ReadMeScreenshots/lighthouseNavigationCircle.png)
+
+Select the red circled tab labeled “Lighthouse” Then click “generate report”. It may take a few seconds, but you should get something resembling a report on Performance, Accessibility, Best Practices, SEO, and Progressive Web App. You will see PWA is greyed out because there is no service worker for the application yet.
+
+![NotPWAyetScreenShot](ReadMeScreenshots/nonPWAlighthousescreenshot.png)
