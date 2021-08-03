@@ -438,3 +438,121 @@ If you are in chrome and right click on the home component you will see the Chro
 Select the red circled tab labeled “Lighthouse” Then click “generate report”. It may take a few seconds, but you should get something resembling a report on Performance, Accessibility, Best Practices, SEO, and Progressive Web App. You will see PWA is greyed out because there is no service worker for the application yet.
 
 ![NotPWAyetScreenShot](ReadMeScreenshots/nonPWAlighthousescreenshot.png)
+
+This problem has an easy solution since Angular has built in pwa functions that build service workers for you. Just run the following command in your application directory:
+```
+Ng add @angular/pwa
+```
+Once again build and serve the application and visit http://localhost:8080 when you generate a lighthouse report. You will see the PWA circle now has a green circle in notifying you that you now have a Progressive Web Application
+![AplicationNowPWA](ReadMeScreenshots/prolibraryPWAlighthouse.png)
+
+## Caching recent responses
+
+Now you have a PWA, but offline functionality is still very weak. Search a random book and go to the details page of that book. Once there go to the development tools> Network tab > select offline. Now when you try to click the back button the search results will not appear. You wil fix this by implementing a request cahce. Start by running these two commands in the command line:
+```
+ng generate service cache/request-cache
+ng generate service cache/caching-interceptor
+```
+Move to `src/app/cacje/request-cache.service.ts` and change the file to:
+```
+import { Injectable } from '@angular/core';
+import { HttpRequest, HttpResponse } from '@angular/common/http';
+
+const maxAge = 30000;
+@Injectable({
+  providedIn: 'root'
+})
+export class RequestCache  {
+
+  cache = new Map();
+
+  get(req: HttpRequest<any>): HttpResponse<any> | undefined {
+    const url = req.urlWithParams;
+    const cached = this.cache.get(url);
+
+    if (!cached) return undefined;
+
+    const isExpired = cached.lastRead < (Date.now() - maxAge);
+    const expired = isExpired ? 'expired ' : '';
+    return cached.response;
+  }
+
+  put(req: HttpRequest<any>, response: HttpResponse<any>): void {
+    const url = req.urlWithParams;
+    const entry = { url, response, lastRead: Date.now() };
+    this.cache.set(url, entry);
+
+    const expired = Date.now() - maxAge;
+    this.cache.forEach(expiredEntry => {
+      if (expiredEntry.lastRead < expired) {
+        this.cache.delete(expiredEntry.url);
+      }
+    });
+  }
+}
+```
+the get and put methods will get the API responses on searchs cache and pull responses from the cache when offline. To intercept the HTTPS requests from the cache we need a Caching interceptor so move to `src/app/cache/caching-interceptor.service.ts and replace with:
+```
+import { Injectable } from '@angular/core';
+import { HttpEvent, HttpRequest, HttpResponse, HttpInterceptor, HttpHandler } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { RequestCache } from './request-cache.service';
+
+@Injectable()
+export class CachingInterceptor implements HttpInterceptor {
+  constructor(private cache: RequestCache) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    const cachedResponse = this.cache.get(req);
+    return cachedResponse ? of(cachedResponse) : this.sendRequest(req, next, this.cache);
+  }
+
+  sendRequest(req: HttpRequest<any>, next: HttpHandler,
+    cache: RequestCache): Observable<HttpEvent<any>> {
+    return next.handle(req).pipe(
+      tap(event => {
+        if (event instanceof HttpResponse) {
+          cache.put(req, event);
+        }
+      })
+    );
+  }
+}
+```
+To now add the caching feature to your application navigate to `src/app/app.module.ts` and add these imports:
+```
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { RequestCache } from './cache/request-cache.service';
+import { CachingInterceptor } from './cache/caching-interceptor.service';
+```
+and update the providers section to have:
+```
+providers: [{ provide: HTTP_INTERCEPTORS, useClass: CachingInterceptor, multi: true }],
+```
+Now your application will cahce the most recent api responses making the application more funcitonal in offline mode. If you hard reload you will lose cached results, because this setup does no cahce in local storage. Build and Serve the application again and test offline mode again notice the difference.
+
+## Optional: Track network status
+It might be beneficial to notify users, and yourself when you are in offline mode. Open `src/app/app.component.ts and add this code after the onSearch method:
+
+```
+offline: boolean;
+
+onNetworkStatusChange() {
+  this.offline = !navigator.onLine;
+  console.log('offline ' + this.offline);
+}
+```
+and add this inside the ngOnInit method:
+```
+window.addEventListener('online',  this.onNetworkStatusChange.bind(this));
+window.addEventListener('offline', this.onNetworkStatusChange.bind(this));
+```
+then so that you can see when you are offline go to `src/app/app.component.html` add 
+```
+<div *ngIf="offline">offline</div>
+```
+
+## Add Authentication
+
+

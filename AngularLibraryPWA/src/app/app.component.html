@@ -1,9 +1,13 @@
 <mat-toolbar color="primary" class="expanded-toolbar">
+
   <span>
     <button mat-button routerLink="/">{{title}}</button>
     <button mat-button routerLink="/"><mat-icon>home</mat-icon></button>
   </span>
   <div *ngIf="offline">offline</div>
+  <link href="https://global.oktacdn.com/okta-signin-widget/5.9.0/css/okta-sign-in.min.css" type="text/css" rel="stylesheet"/>
+  <button *ngIf="!isAuthenticated" routerLink="/login"> Login </button>
+<button *ngIf="isAuthenticated" (click)="logout()"> Logout </button>
   <div fxLayout="row" fxShow="false" fxShow.gt-sm>
       <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
         <div class="input-group">
