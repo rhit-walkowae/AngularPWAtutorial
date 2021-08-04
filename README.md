@@ -555,4 +555,40 @@ then so that you can see when you are offline go to `src/app/app.component.html`
 
 ## Add Authentication
 
+### **OKTA Console**
+You will now add authentication capabilities to your PWA using okta Auth. travel to the following link: https://developer.okta.com/signup/ to signup for a free okta developer account if you do not already have one. Once logged in to okta as an Admin navigate to applications
+
+![OktaCreateAppScreenshot](ReadMeScreenshots\CreateApplicationOKTAscreen.PNG)
+* Click on Create App Integration
+* Select OIDC - OpenID Connect
+* Then Select SPA
+The screen will refresh and you will complete the following:
+* Name the app
+* Grant Authorization Code
+* Set Sign-in redirect URI's to `http://localhost:8080/login/callback`
+* Set sign-out redirect URI's `http://localhost:8080`
+* Set Controlled access to *Skip group assignment for now*
+* Click save
+  
+ The screen you are now on will have you clientID and Okta domain in general settings. Navigate to the assignments page of you app settings 
+
+ ![AssignUserstotheapplication](ReadMeScreenshots\AssignUsers2AppScreenshot.PNG)
+
+ click assign, then assign to people, and then assign yourself. The last step in the okta console may not be necessary buy you may see issues involving CORS and redirects using the OKTA Auth API. So to fix this complete the follow:
+ * Go to security tab
+ * Navigate to the API sub tab
+ * Go to the Trusted Origins section
+ * Click Add Origin
+ * Enter a name for the Origin
+ * Enter the base URL you are hosting one i.e `http://localhost:8080/`
+ * Check **BOTH** CORS and Redirect
+ * Click Save
+
+### **Back to Code!**
+
+In you application directory run the following command in your terminal
+```
+npm install @okta/okta-signin-widget
+npm install @okta/okta-angular
+```
 
