@@ -669,6 +669,164 @@ export class AppComponent implements OnInit{
   }
 }
 ```
-really you just added the okta import, isAuthenticated property, and two method for logging in and out. 
+really replacing this code just adds the okta import, isAuthenticated property, and two methods for logging in and out. Next create a new component in the app folder called `login.component.ts` and paste the following code inside:
+```
+import { Component, OnInit } from '@angular/core';
+import { Router, NavigationStart} from '@angular/router';
+
+import { OktaAuthService } from '@okta/okta-angular';
+import { Tokens } from '@okta/okta-auth-js';
+//@ts-ignore
+import * as OktaSignIn from '@okta/okta-signin-widget';
+
+@Component({
+  selector: 'app-secure',
+  template: `
+    <!-- Container to inject the Sign-In Widget -->
+    <div id="okta-signin-container"></div>
+  `
+})
+export class LoginComponent implements OnInit {
+  authService;
+  widget = new OktaSignIn({
+    el: '#okta-signin-container',
+    baseUrl: 'https://{yourDomainName}.okta.com',
+    authParams: {
+      pkce: true
+    },
+         clientId: '{YourClientID}',
+         redirectUri: 'http://localhost:8080/login/callback'
+  });
+
+  constructor(oktaAuth: OktaAuthService, router: Router) {
+    this.authService = oktaAuth;
+
+    // Show the widget when prompted, otherwise remove it from the DOM.
+    router.events.forEach(event => {
+      if (event instanceof NavigationStart) {
+        switch(event.url) {
+          case '/login':
+            break;
+          case '/protected':
+            break;
+          default:
+            this.widget.remove();
+            break;
+        }
+      }
+    });
+  }
+
+  async ngOnInit() {
+    const originalUri = this.authService.getOriginalUri();
+    if (!originalUri) {
+      this.authService.setOriginalUri('/');
+    }
+
+    const tokens: Tokens = await this.widget.showSignInToGetTokens({
+      el: '#okta-signin-container',
+    });
+    this.authService.handleLoginRedirect(tokens);
+    this.widget.hide();
+  }
+}
+```
+Now Navigate to `src/app/app.module.ts` and replace the code with:
+```
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule, Injector } from '@angular/core';
+import { Routes, RouterModule, Router } from '@angular/router';
+import { HttpClientModule, HTTP_INTERCEPTORS  } from '@angular/common/http';
+import { RequestCache } from './cache/request-cache.service';
+import { CachingInterceptor } from './cache/caching-interceptor.service';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FlexLayoutModule } from "@angular/flex-layout";
+import { MaterialModule } from './material.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+
+
+import { OktaAuthService } from '@okta/okta-angular';
+
+import {
+  OKTA_CONFIG,
+  OktaAuthModule,
+  OktaCallbackComponent,
+  OktaAuthGuard
+} from '@okta/okta-angular';
+
+import { AppComponent } from './app.component';
+import { LoginComponent } from './login.component';
+import { HomeComponent } from './home/home.component';
+import { SearchComponent } from './search/search.component';
+import { DetailsComponent } from './details/details.component';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from '../environments/environment';
+
+const config = {
+  issuer: 'https://dev-66930737.okta.com/oauth2/default',
+  redirectUri: window.location.origin + '/login/callback',
+  clientId: '0oa1eg68lvGijyaup5d7',
+  pkce: true
+}
+
+export function onAuthRequired(oktaAuth: OktaAuthService, injector: Injector) {
+  const router = injector.get(Router);
+
+  // Redirect the user to your custom login page
+  router.navigate(['/login']);
+}
+
+const appRoutes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'search', component: SearchComponent },
+  { path: 'details', component: DetailsComponent },
+  {
+    path: 'login/callback',
+    component: LoginComponent
+  },
+  {
+    path: 'login',
+    component: LoginComponent
+  }
+]
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    SearchComponent,
+    DetailsComponent,
+    LoginComponent,
+  ],
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    BrowserAnimationsModule,
+    FlexLayoutModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MaterialModule,
+    RouterModule.forRoot(appRoutes),
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: environment.production,
+      // Register the ServiceWorker as soon as the app is stable
+      // or after 30 seconds (whichever comes first).
+      registrationStrategy: 'registerWhenStable:30000'
+    }),
+    OktaAuthModule
+  ],
+  providers: [
+    { provide: OKTA_CONFIG, useValue: config },
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+This replacement connects the login component and imports the OKTA Auth imports for routing. This replacement also removes the need to use the app-routing file so it can be deleted as well. With all these new imports `ng build` may no longer work for such a large project try using:
+```
+npm start -- --port 8080
+```
+This will serve the application on http://localhost:8080/
 
 
