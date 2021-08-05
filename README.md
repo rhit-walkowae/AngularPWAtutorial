@@ -690,11 +690,11 @@ export class LoginComponent implements OnInit {
   authService;
   widget = new OktaSignIn({
     el: '#okta-signin-container',
-    baseUrl: 'https://dev-66930737.okta.com',
+    baseUrl: 'https://{YourDomain}',
     authParams: {
       pkce: true
     },
-         clientId: '0oa1eg68lvGijyaup5d7',
+         clientId: '{YourClientID}',
          redirectUri: 'http://localhost:8080/login/callback'
   });
 
@@ -764,9 +764,9 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
 
 const config = {
-  issuer: 'https://dev-66930737.okta.com/oauth2/default',
+  issuer: 'https://{YourDomain}/oauth2/default',
   redirectUri: window.location.origin + '/login/callback',
-  clientId: '0oa1eg68lvGijyaup5d7',
+  clientId: '{YourClientID}',
   pkce: true
 }
 
