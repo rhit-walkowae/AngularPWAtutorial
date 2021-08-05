@@ -570,7 +570,8 @@ then so that you can see when you are offline go to `src/app/app.component.html`
 ### **OKTA Console**
 You will now add authentication capabilities to your PWA using okta Auth. travel to the following link: https://developer.okta.com/signup/ to signup for a free okta developer account if you do not already have one. Once logged in to okta as an Admin navigate to applications
 
-![OktaCreateAppScreenshot](ReadMeScreenshots\CreateApplicationOKTAscreen.PNG)
+![CreateApplicationOKTAscreen](https://user-images.githubusercontent.com/70866374/128417169-fc1409e8-156e-4c16-8bbc-d97d102319a9.PNG)
+
 * Click on Create App Integration
 * Select OIDC - OpenID Connect
 * Then Select SPA
@@ -584,7 +585,8 @@ The screen will refresh and you will complete the following:
   
  The screen you are now on will have you clientID and Okta domain in general settings. Navigate to the assignments page of you app settings 
 
- ![AssignUserstotheapplication](ReadMeScreenshots\AssignUsers2AppScreenshot.PNG)
+ ![AssignUsers2AppScreenshot](https://user-images.githubusercontent.com/70866374/128417142-cd82f088-3636-41a0-a308-e68babddf032.PNG)
+
 
  click assign, then assign to people, and then assign yourself. The last step in the okta console may not be necessary buy you may see issues involving CORS and redirects using the OKTA Auth API. So to fix this complete the follow:
  * Go to security tab
