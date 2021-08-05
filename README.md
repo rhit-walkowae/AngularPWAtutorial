@@ -20,14 +20,26 @@ you may need to run this command with sudo, but this will install the ng command
 ```
 ng new [NameOfDirectory]
 ```
-replace NameOfDirectory with the name of the directory you want to hold the angular application. You will be asked two questions “Would you like to add Angular routing?” reply Yes. Then you will be asked “which stylesheet format would you like to use?” select CSS for that is all you will need for this tutorial. 
+replace NameOfDirectory with the name of the directory you want to hold the angular application. You will be asked two questions:
+* “Would you like to add Angular routing?” reply Yes. 
+*  “which stylesheet format would you like to use?” select CSS for that.
 
-# Add angular material
+# Add angular material and flex layout
 
 Navigate into the newly made project directory and run the following command
 ```
 Ng add @angular/material
 ```
+
+* Pick the deep purple/amber theme
+* Do NOT set up global angular material typography styles?
+* Respond yes to setting up browser animations for angular material
+
+  Also run the following for flex layout
+  ```
+  npm install @angular/flex-layout@latest
+  ```
+  
 Create a file in src/app called `material.module.ts` and the following code:
 ```
 import { NgModule } from '@angular/core';
@@ -260,11 +272,11 @@ export class BooksService {
 Generate other components for PWA with angular cli
 Now you will make the components that utilize the search function; Home, details, and search lists. Make them using the following commands in your application directory
 ```
-ng g c home –module app
-ng g c search –module app
-ng g c details –module app
+ng g c home –-module=app
+ng g c search –-module=app
+ng g c details –-module=app
 ```
-After creating these you will have to link them to routes using the routing module. Navigate to src/app/app-routing.module.ts and add the following:
+After creating these you will have to link them to routes using the routing module. Navigate to `src/app/app-routing.module.ts` and add the following:
 ```
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
@@ -290,11 +302,11 @@ and add the following:
 <h1>Angular Library PWA</h1>
 <h2>A simple progressive web application</h2>
 ```
-Next add the search component by navigating to the src/app/search/search.component.ts and replacing it’s code with:
+Next add the search component by navigating to the `src/app/search/search.component.ts` and replacing it’s code with:
 ```
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { MatTableDataSource } from '@angular/material';
+import { MatTableDataSource } from '@angular/material/table';
 import { BooksService } from '../books/books.service';
 import { Subscription } from 'rxjs';
 
@@ -340,7 +352,7 @@ export class SearchComponent implements OnInit {
   }
 }
 ```
-Naviagte to src/app/search/search.component.html and updates its code to:
+Naviagte to `src/app/search/search.component.html` and updates its code to:
 ```
 <h1 class="h1">Search Results</h1>
 <div fxLayout="row" fxLayout.xs="column" fxLayoutAlign="center" class="products">
@@ -368,7 +380,7 @@ Naviagte to src/app/search/search.component.html and updates its code to:
   </table>
 </div>
 ```
-Now do the details component. Opn src/app/details/details.component.ts and replace code with:
+Now do the details component. Open `src/app/details/details.component.ts` and replace code with:
 ```
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -400,7 +412,7 @@ export class DetailsComponent implements OnInit {
   }
 }
 ```
-Next Navigate to src/app/details.component.html and replace that code with:
+Next Navigate to `src/app/details.component.html` and replace that code with:
 ```
 <h1 class="h1">Book Details</h1>
 <div fxLayout="row" fxLayout.xs="column" fxLayoutAlign="center" class="products">
@@ -453,7 +465,7 @@ Now you have a PWA, but offline functionality is still very weak. Search a rando
 ng generate service cache/request-cache
 ng generate service cache/caching-interceptor
 ```
-Move to `src/app/cacje/request-cache.service.ts` and change the file to:
+Move to `src/app/cache/request-cache.service.ts` and change the file to:
 ```
 import { Injectable } from '@angular/core';
 import { HttpRequest, HttpResponse } from '@angular/common/http';
@@ -491,7 +503,7 @@ export class RequestCache  {
   }
 }
 ```
-the get and put methods will get the API responses on searchs cache and pull responses from the cache when offline. To intercept the HTTPS requests from the cache we need a Caching interceptor so move to `src/app/cache/caching-interceptor.service.ts and replace with:
+the get and put methods will get the API responses on searchs cache and pull responses from the cache when offline. To intercept the HTTPS requests from the cache we need a Caching interceptor so move to `src/app/cache/caching-interceptor.service.ts` and replace with:
 ```
 import { Injectable } from '@angular/core';
 import { HttpEvent, HttpRequest, HttpResponse, HttpInterceptor, HttpHandler } from '@angular/common/http';
@@ -591,4 +603,70 @@ In you application directory run the following command in your terminal
 npm install @okta/okta-signin-widget
 npm install @okta/okta-angular
 ```
+these installs will give you access to OKTA imports. Navigate to `src/app/app.component.html` and bellow the offline div add the following:
+```
+<link href="https://global.oktacdn.com/okta-signin-widget/5.9.0/css/okta-sign-in.min.css" type="text/css" rel="stylesheet"/>
+<button *ngIf="!isAuthenticated" routerLink="/login"> Login </button>
+<button *ngIf="isAuthenticated" (click)="logout()"> Logout </button>
+```
+this will display a login and out button at the top of each page. Next navigate to `src/app/app.component.ts` and replace the code to match the following:
+```
+import { Component, OnInit} from '@angular/core';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { Router } from "@angular/router";
+import { OktaAuthService } from '@okta/okta-angular';
+import { BooksService } from './books/books.service';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent implements OnInit{
+  title = 'AngularLibraryPWA';
+  searchForm: FormGroup;
+  isAuthenticated: boolean = false;
+
+  constructor(public oktaAuth: OktaAuthService, private formBuilder: FormBuilder,
+    private router: Router) {
+      this.oktaAuth.$authenticationState.subscribe(
+        (isAuthenticated: boolean)  => this.isAuthenticated = isAuthenticated
+      );
+  }
+
+  async ngOnInit() {
+    this.searchForm = this.formBuilder.group({
+      search: ['', Validators.required],
+    });
+    window.addEventListener('online', this.onNetworkStatusChange.bind(this));
+    window.addEventListener('offline', this.onNetworkStatusChange.bind(this));
+    this.isAuthenticated = await this.oktaAuth.isAuthenticated();
+  }
+  login() {
+    this.oktaAuth.signInWithRedirect({
+      originalUri: '/profile'
+    });
+  }
+  async logout() {
+    // Terminates the session with Okta and removes current tokens.
+    console.log('logout');
+    this.router.navigateByUrl('');
+    await this.oktaAuth.signOut();
+    
+  }
+
+  onSearch() {
+    if (!this.searchForm.valid) return;
+    this.router.navigate(['search'], { queryParams: { query: this.searchForm.get('search')?.value } });
+  }
+  offline: boolean;
+
+  onNetworkStatusChange() {
+    this.offline = !navigator.onLine;
+    console.log('offline ' + this.offline);
+  }
+}
+```
+really you just added the okta import, isAuthenticated property, and two method for logging in and out. 
+
 
