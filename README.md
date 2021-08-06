@@ -14,7 +14,7 @@ Visit this link: https://nodejs.org/en/download/ to download Node.js for your re
 ## Create a single page application
 After node is installed get started on creating the single page application by first installing the angular command line tool. Open a shell and run 
 ```
-npm install -g @angular/cli@latests
+npm install -g @angular/cli@latest
 ```
 you may need to run this command with sudo, but this will install the ng command on your OS. Once finished you can create your application 
 ```
@@ -28,11 +28,11 @@ replace NameOfDirectory with the name of the directory you want to hold the angu
 
 Navigate into the newly made project directory and run the following command
 ```
-Ng add @angular/material
+ng add @angular/material
 ```
 
 * Pick the deep purple/amber theme
-* Do NOT set up global angular material typography styles?
+* Do NOT set up global angular material typography styles
 * Respond yes to setting up browser animations for angular material
 
   Also run the following for flex layout
@@ -453,7 +453,7 @@ Select the red circled tab labeled “Lighthouse” Then click “generate repor
 
 This problem has an easy solution since Angular has built in pwa functions that build service workers for you. Just run the following command in your application directory:
 ```
-Ng add @angular/pwa
+ng add @angular/pwa
 ```
 Once again build and serve the application and visit http://localhost:8080 when you generate a lighthouse report. You will see the PWA circle now has a green circle in notifying you that you now have a Progressive Web Application
 ![AplicationNowPWA](ReadMeScreenshots/prolibraryPWAlighthouse.png)
