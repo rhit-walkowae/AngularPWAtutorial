@@ -30,9 +30,9 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
 
 const config = {
-  issuer: 'https://dev-66930737.okta.com/oauth2/default',
+  issuer: 'https://{domainID}/oauth2/default',
   redirectUri: window.location.origin + '/login/callback',
-  clientId: '0oa1eg68lvGijyaup5d7',
+  clientId: '{ClientID}',
   pkce: true
 }
 

@@ -17,11 +17,11 @@ export class LoginComponent implements OnInit {
   authService;
   widget = new OktaSignIn({
     el: '#okta-signin-container',
-    baseUrl: 'https://dev-66930737.okta.com',
+    baseUrl: 'https://{DomainID}',
     authParams: {
       pkce: true
     },
-         clientId: '0oa1eg68lvGijyaup5d7',
+         clientId: '{ClientID}',
          redirectUri: 'http://localhost:8080/login/callback'
   });
 
