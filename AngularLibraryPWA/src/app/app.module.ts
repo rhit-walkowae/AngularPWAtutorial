@@ -81,7 +81,7 @@ const appRoutes: Routes = [
     }),
     OktaAuthModule
   ],
-  providers: [
+  providers: [{ provide: HTTP_INTERCEPTORS, useClass: CachingInterceptor, multi: true },
     { provide: OKTA_CONFIG, useValue: config },
   ],
   bootstrap: [AppComponent]
