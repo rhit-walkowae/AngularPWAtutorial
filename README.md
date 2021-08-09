@@ -14,7 +14,7 @@ Visit this link: https://nodejs.org/en/download/ to download Node.js for your re
 ## Create a single page application
 After node is installed get started on creating the single page application by first installing the angular command line tool. Open a shell and run 
 ```
-npm install -g @angular/cli@latests
+npm install -g @angular/cli@latest
 ```
 you may need to run this command with sudo, but this will install the ng command on your OS. Once finished you can create your application 
 ```
@@ -28,11 +28,11 @@ replace NameOfDirectory with the name of the directory you want to hold the angu
 
 Navigate into the newly made project directory and run the following command
 ```
-Ng add @angular/material
+ng add @angular/material
 ```
 
 * Pick the deep purple/amber theme
-* Do NOT set up global angular material typography styles?
+* Do NOT set up global angular material typography styles
 * Respond yes to setting up browser animations for angular material
 
   Also run the following for flex layout
@@ -453,7 +453,7 @@ Select the red circled tab labeled “Lighthouse” Then click “generate repor
 
 This problem has an easy solution since Angular has built in pwa functions that build service workers for you. Just run the following command in your application directory:
 ```
-Ng add @angular/pwa
+ng add @angular/pwa
 ```
 Once again build and serve the application and visit http://localhost:8080 when you generate a lighthouse report. You will see the PWA circle now has a green circle in notifying you that you now have a Progressive Web Application
 ![AplicationNowPWA](ReadMeScreenshots/prolibraryPWAlighthouse.png)
@@ -570,7 +570,8 @@ then so that you can see when you are offline go to `src/app/app.component.html`
 ### **OKTA Console**
 You will now add authentication capabilities to your PWA using okta Auth. travel to the following link: https://developer.okta.com/signup/ to signup for a free okta developer account if you do not already have one. Once logged in to okta as an Admin navigate to applications
 
-![OktaCreateAppScreenshot](ReadMeScreenshots\CreateApplicationOKTAscreen.PNG)
+![CreateApplicationOKTAscreen](https://user-images.githubusercontent.com/70866374/128417169-fc1409e8-156e-4c16-8bbc-d97d102319a9.PNG)
+
 * Click on Create App Integration
 * Select OIDC - OpenID Connect
 * Then Select SPA
@@ -584,7 +585,8 @@ The screen will refresh and you will complete the following:
   
  The screen you are now on will have you clientID and Okta domain in general settings. Navigate to the assignments page of you app settings 
 
- ![AssignUserstotheapplication](ReadMeScreenshots\AssignUsers2AppScreenshot.PNG)
+ ![AssignUsers2AppScreenshot](https://user-images.githubusercontent.com/70866374/128417142-cd82f088-3636-41a0-a308-e68babddf032.PNG)
+
 
  click assign, then assign to people, and then assign yourself. The last step in the okta console may not be necessary buy you may see issues involving CORS and redirects using the OKTA Auth API. So to fix this complete the follow:
  * Go to security tab
@@ -667,6 +669,164 @@ export class AppComponent implements OnInit{
   }
 }
 ```
-really you just added the okta import, isAuthenticated property, and two method for logging in and out. 
+really replacing this code just adds the okta import, isAuthenticated property, and two methods for logging in and out. Next create a new component in the app folder called `login.component.ts` and paste the following code inside:
+```
+import { Component, OnInit } from '@angular/core';
+import { Router, NavigationStart} from '@angular/router';
+
+import { OktaAuthService } from '@okta/okta-angular';
+import { Tokens } from '@okta/okta-auth-js';
+//@ts-ignore
+import * as OktaSignIn from '@okta/okta-signin-widget';
+
+@Component({
+  selector: 'app-secure',
+  template: `
+    <!-- Container to inject the Sign-In Widget -->
+    <div id="okta-signin-container"></div>
+  `
+})
+export class LoginComponent implements OnInit {
+  authService;
+  widget = new OktaSignIn({
+    el: '#okta-signin-container',
+    baseUrl: 'https://{YourDomain}',
+    authParams: {
+      pkce: true
+    },
+         clientId: '{YourClientID}',
+         redirectUri: 'http://localhost:8080/login/callback'
+  });
+
+  constructor(oktaAuth: OktaAuthService, router: Router) {
+    this.authService = oktaAuth;
+
+    // Show the widget when prompted, otherwise remove it from the DOM.
+    router.events.forEach(event => {
+      if (event instanceof NavigationStart) {
+        switch(event.url) {
+          case '/login':
+            break;
+          case '/protected':
+            break;
+          default:
+            this.widget.remove();
+            break;
+        }
+      }
+    });
+  }
+
+  async ngOnInit() {
+    const originalUri = this.authService.getOriginalUri();
+    if (!originalUri) {
+      this.authService.setOriginalUri('/');
+    }
+
+    const tokens: Tokens = await this.widget.showSignInToGetTokens({
+      el: '#okta-signin-container',
+    });
+    this.authService.handleLoginRedirect(tokens);
+    this.widget.hide();
+  }
+}
+```
+Now Navigate to `src/app/app.module.ts` and replace the code with:
+```
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule, Injector } from '@angular/core';
+import { Routes, RouterModule, Router } from '@angular/router';
+import { HttpClientModule, HTTP_INTERCEPTORS  } from '@angular/common/http';
+import { RequestCache } from './cache/request-cache.service';
+import { CachingInterceptor } from './cache/caching-interceptor.service';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FlexLayoutModule } from "@angular/flex-layout";
+import { MaterialModule } from './material.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+
+
+import { OktaAuthService } from '@okta/okta-angular';
+
+import {
+  OKTA_CONFIG,
+  OktaAuthModule,
+  OktaCallbackComponent,
+  OktaAuthGuard
+} from '@okta/okta-angular';
+
+import { AppComponent } from './app.component';
+import { LoginComponent } from './login.component';
+import { HomeComponent } from './home/home.component';
+import { SearchComponent } from './search/search.component';
+import { DetailsComponent } from './details/details.component';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from '../environments/environment';
+
+const config = {
+  issuer: 'https://{YourDomain}/oauth2/default',
+  redirectUri: window.location.origin + '/login/callback',
+  clientId: '{YourClientID}',
+  pkce: true
+}
+
+export function onAuthRequired(oktaAuth: OktaAuthService, injector: Injector) {
+  const router = injector.get(Router);
+
+  // Redirect the user to your custom login page
+  router.navigate(['/login']);
+}
+
+const appRoutes: Routes = [
+  { path: '', component: HomeComponent },
+  { path: 'search', component: SearchComponent },
+  { path: 'details', component: DetailsComponent },
+  {
+    path: 'login/callback',
+    component: LoginComponent
+  },
+  {
+    path: 'login',
+    component: LoginComponent
+  }
+]
+@NgModule({
+  declarations: [
+    AppComponent,
+    HomeComponent,
+    SearchComponent,
+    DetailsComponent,
+    LoginComponent,
+  ],
+  imports: [
+    BrowserModule,
+    HttpClientModule,
+    BrowserAnimationsModule,
+    FlexLayoutModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MaterialModule,
+    RouterModule.forRoot(appRoutes),
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: environment.production,
+      // Register the ServiceWorker as soon as the app is stable
+      // or after 30 seconds (whichever comes first).
+      registrationStrategy: 'registerWhenStable:30000'
+    }),
+    OktaAuthModule
+  ],
+  providers: [
+    { provide: OKTA_CONFIG, useValue: config },
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+```
+
+This replacement connects the login component and imports the OKTA Auth imports for routing. This replacement also removes the need to use the app-routing file so it can be deleted as well. With all these new imports `ng build` may no longer work for such a large project try using:
+```
+npm start -- --port 8080
+```
+This will serve the application on http://localhost:8080/
 
 
